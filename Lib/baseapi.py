@@ -85,11 +85,11 @@ class BaseAPI(ABC):
         if os.path.isfile(filename):  # "/root/asf/ES-Rule-21-Phishing_user_report_mail/senior_phishing_expert.md"
             return filename
         else:
-            if os.path.join(DATA_DIR, self.module_name, filename):  # "ES-Rule-21-Phishing_user_report_mail/senior_phishing_expert.md"
-                template_path = os.path.join(DATA_DIR, self.module_name, filename)
+            template_path = os.path.join(DATA_DIR, self.module_name, filename)
+            if os.path.isfile(template_path):  # "ES-Rule-21-Phishing_user_report_mail/senior_phishing_expert.md"
                 return template_path
-            else:
-                raise Exception("File not exist")
+
+            raise FileNotFoundError(f"File not exist: {template_path}")
 
     def load_markdown_template(self, filename: str) -> _TemplateWrapper:
         """
