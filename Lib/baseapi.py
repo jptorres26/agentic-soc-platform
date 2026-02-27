@@ -56,26 +56,34 @@ class BaseAPI(ABC):
 
     def _get_md_file_path(self, filename: str, lang=None) -> str:
         """
-        Get the file path based on the workbook name.
+        Get the markdown file path based on the workbook name.
+        Lookup order:
+        1. explicit file path
+        2. DATA_DIR/<name>.md (or provided .md)
+        3. DATA_DIR/<module_name>/<name>.md (or provided .md)
         """
 
         if os.path.isfile(filename):  # "/root/asf/ES-Rule-21-Phishing_user_report_mail/senior_phishing_expert.md"
-            template_path = filename
+            return filename
+
+        if filename.endswith('.md'):  # "senior_phishing_expert.md"
+            fname = filename
+        elif lang is not None:
+            fname = f"{filename}_{lang}.md"  # "senior_phishing_expert_en.md"
         else:
-            if filename.endswith('.md'):  # "senior_phishing_expert.md"
-                fname = filename
-            else:
-                if lang is not None:
-                    fname = f"{filename}_{lang}.md"  # "senior_phishing_expert_en"
-                else:
-                    fname = f"{filename}.md"  # "senior_phishing_expert"
+            fname = f"{filename}.md"  # "senior_phishing_expert.md"
 
-            if os.path.isfile(os.path.join(DATA_DIR, fname)):  # "ES-Rule-21-Phishing_user_report_mail/senior_phishing_expert.md"
-                template_path = os.path.join(DATA_DIR, fname)
-            else:
-                template_path = os.path.join(DATA_DIR, self.module_name, fname)
+        data_root_path = os.path.join(DATA_DIR, fname)
+        if os.path.isfile(data_root_path):
+            return data_root_path
 
-        return template_path
+        module_scoped_path = os.path.join(DATA_DIR, self.module_name, fname)
+        if os.path.isfile(module_scoped_path):
+            return module_scoped_path
+
+        raise FileNotFoundError(
+            f"Markdown template not found. Checked: {data_root_path} and {module_scoped_path}"
+        )
 
     def _get_file_path(self, filename: str):
         """
@@ -109,7 +117,7 @@ class BaseAPI(ABC):
 
         except Exception as e:
             logger.warning(f"Failed to load prompt template {template_path}: {str(e)}")
-            raise e
+            raise
 
     def load_system_prompt_template(self, filename, lang=None):
         """Load system prompt template"""
@@ -121,7 +129,7 @@ class BaseAPI(ABC):
                 return system_prompt_template
         except Exception as e:
             logger.warning(f"Failed to load prompt template {template_path}: {str(e)}")
-            raise e
+            raise
 
     def load_human_prompt_template(self, filename, lang=None):
         template_path = self._get_md_file_path(filename, lang=lang)
@@ -132,7 +140,7 @@ class BaseAPI(ABC):
                 return human_prompt_template
         except Exception as e:
             logger.warning(f"Failed to load prompt template {template_path}: {str(e)}")
-            raise e
+            raise
 
     def run(self):
         raise NotImplementedError

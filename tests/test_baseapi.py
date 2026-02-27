@@ -63,3 +63,20 @@ def test_get_file_path_raises_when_file_missing(tmp_path, monkeypatch):
     api = DemoAPI()
     with pytest.raises(FileNotFoundError, match="File not exist"):
         api._get_file_path("missing.md")
+
+
+def test_get_md_file_path_uses_data_root_with_lang_suffix(tmp_path, monkeypatch):
+    root_file = tmp_path / "system_en.md"
+    root_file.write_text("hello", encoding="utf-8")
+    monkeypatch.setattr("Lib.baseapi.DATA_DIR", str(tmp_path))
+
+    api = DemoAPI()
+    assert Path(api._get_md_file_path("system", lang="en")) == root_file
+
+
+def test_get_md_file_path_raises_with_checked_paths(tmp_path, monkeypatch):
+    monkeypatch.setattr("Lib.baseapi.DATA_DIR", str(tmp_path))
+
+    api = DemoAPI()
+    with pytest.raises(FileNotFoundError, match="Markdown template not found"):
+        api._get_md_file_path("not_found")
